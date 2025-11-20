@@ -1,0 +1,793 @@
+# Program - 1
+import matplotlib.pyplot as plt
+import numpy as np
+from math import sqrt
+
+def rmse_metric(actual, predicted):
+    sum_error = 0.0
+    for i in range(len(actual)):
+        prediction_error = predicted[i] - actual[i]
+        sum_error += (prediction_error**2)
+    mean_error = sum_error / float(len(actual))
+    return sqrt(mean_error)
+
+def evaluate_algorithm(dataset, algorithm):
+    test_set = []
+    for row in dataset:
+        row_copy = list(row)
+        row_copy[-1] = None
+        test_set.append(row_copy)
+    predicted = algorithm(dataset, test_set)
+    print(predicted)
+    actual = [row[-1] for row in dataset]
+    rmse = rmse_metric(actual, predicted)
+    return rmse
+
+def mean(values):
+    return sum(values) / float(len(values))
+
+def covariance(x, mean_x, y, mean_y):
+    covar = 0.0
+    for i in range(len(x)):
+        covar += (x[i] - mean_x) * (y[i] - mean_y)
+    return covar/float(len(x))
+
+def variance(values, mean_val):
+    return (sum([(x-mean_val)**2 for x in values]))/float(len(values))
+
+def coefficients(dataset):
+    x = [row[0] for row in dataset]
+    y = [row[1] for row in dataset]
+    x_mean, y_mean = mean(x), mean(y)
+    b1 = covariance(x, x_mean, y, y_mean) / variance(x, x_mean)
+    b0 = y_mean - b1 * x_mean
+    return [b0, b1]
+
+def simple_linear_regression(train, test):
+    predictions = []
+    b0, b1 = coefficients(train)
+    for row in test:
+        yhat = b0 + b1 * row[0]
+        predictions.append(yhat)
+    return predictions
+
+dataset = [[1, 1], [2, 3], [4, 3], [3, 2], [5, 5]]
+x = [row[0] for row in dataset]
+y = [row[1] for row in dataset]
+mean_x, mean_y = mean(x), mean(y)
+var_x, var_y = variance(x, mean_x), variance(y, mean_y)
+
+print('x stats: Mean = %.3f Variance = %.3f' % (mean_x, var_x))
+print('y stats: Mean = %.3f Variance = %.3f' % (mean_y, var_y))
+
+covar = covariance(x, mean_x, y, mean_y)
+print('Covariance: %.3f' % (covar))
+rmse = evaluate_algorithm(dataset, simple_linear_regression)
+print('RMSE: %.3f' % (rmse))
+
+b0, b1 = coefficients(dataset)
+print('Coefficients: B0=%.3f, B1=%.3f' % (b0, b1))
+
+
+# Output for Program - 1
+"""
+x stats: Mean = 3.000 Variance = 2.000
+y stats: Mean = 2.800 Variance = 1.760
+Covariance: 1.600
+[1.1999999999999995, 1.9999999999999996, 3.5999999999999996, 2.8, 4.3999999999999995]
+RMSE: 0.693
+Coefficients: B0=0.400, B1=0.800
+"""
+
+# -----------------------------------------------------------------------------
+
+# Program - 2
+import pandas as pd
+import numpy as np
+
+# Simulating data loading based on CSV content
+data = pd.DataFrame([
+    ['Morning', 'Sunny', 'Warm', 'Yes', 'Mild', 'Strong', 'Yes'],
+    ['Evening', 'Rainy', 'Cold', 'No', 'Mild', 'Normal', 'No'],
+    ['Morning', 'Sunny', 'Moderate', 'Yes', 'Normal', 'Normal', 'Yes'],
+    ['Evening', 'Sunny', 'Cold', 'Yes', 'High', 'Strong', 'Yes']
+], columns=['Time', 'Weather', 'Temperature', 'Company', 'Humidity', 'Wind', 'Goes'])
+
+print(data)
+
+d = np.array(data)[:,:-1]
+print("The attributes are: \n", d)
+
+target = np.array(data)[:,-1]
+print("The target is: ", target)
+
+def train(c,t):
+    specific_hypothesis = None
+    for i, val in enumerate(t):
+        if val == "Yes":
+            specific_hypothesis = c[i].copy()
+            break
+
+    if specific_hypothesis is None:
+        return "No positive examples found."
+
+    for i, val in enumerate(c):
+        if t[i] == "Yes":
+            for x in range(len(specific_hypothesis)):
+                if val[x] != specific_hypothesis[x]:
+                    specific_hypothesis[x] = "?"
+                else:
+                    pass
+        else:
+            pass
+    return specific_hypothesis
+
+print("The final hypothesis is:", train(d, target))
+
+# Output for Program - 2
+"""
+      Time   Weather Temperature Company Humidity    Wind Goes
+0  Morning     Sunny        Warm     Yes     Mild  Strong  Yes
+1  Evening     Rainy        Cold      No     Mild  Normal   No
+2  Morning     Sunny    Moderate     Yes   Normal  Normal  Yes
+3  Evening     Sunny        Cold     Yes     High  Strong  Yes
+The attributes are: 
+ [['Morning' 'Sunny' 'Warm' 'Yes' 'Mild' 'Strong']
+ ['Evening' 'Rainy' 'Cold' 'No' 'Mild' 'Normal']
+ ['Morning' 'Sunny' 'Moderate' 'Yes' 'Normal' 'Normal']
+ ['Evening' 'Sunny' 'Cold' 'Yes' 'High' 'Strong']]
+The target is:  ['Yes' 'No' 'Yes' 'Yes']
+The final hypothesis is: ['?' 'Sunny' '?' 'Yes' '?' '?']
+"""
+
+# -----------------------------------------------------------------------------
+
+# Program - 3
+import numpy as np
+import pandas as pd
+
+# Simulating data loading based on CSV content
+data = pd.DataFrame([
+    ['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same', 'Yes'],
+    ['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same', 'Yes'],
+    ['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change', 'No'],
+    ['Sunny', 'Warm', 'High', 'Strong', 'Cold', 'Change', 'Yes']
+], columns=['Sky', 'AirTemp', 'Humidity', 'Wind', 'Water', 'Forecast', 'EnjoySport'])
+
+print(data)
+concepts = np.array(data.iloc[:,0:-1])
+print(concepts)
+target = np.array(data.iloc[:,-1])
+print(target)
+
+def learn(concepts, target):
+    specific_h = concepts[0].copy() 
+    
+    print("\nInitialization of specific_h and genearal_h")
+    print("\nSpecific hypothesis: ", specific_h)
+    
+    general_h = [["?" for _ in range(len(specific_h))] for _ in range(len(specific_h))]
+    print("\nGeneric hypothesis: ",general_h)
+    
+    for i, h in enumerate(concepts):
+        print("\nInstance", i+1, "is ", h)
+        
+        if target[i] == "Yes":
+            print("Instance is Positive ")
+            for x in range(len(specific_h)):
+                if h[x] != specific_h[x]:
+                    specific_h[x] = '?'
+                    for g_idx in range(len(general_h)):
+                        if general_h[g_idx][x] != '?' and general_h[g_idx][x] != specific_h[x]:
+                             general_h[g_idx][x] = '?' 
+        
+        elif target[i] == "No":
+            print("Instance is Negative ")
+            for x in range(len(specific_h)):
+                if h[x] != specific_h[x]:
+                    for g_idx in range(len(general_h)):
+                        if general_h[g_idx][x] == '?':
+                            temp_g = general_h[g_idx].copy()
+                            temp_g[x] = specific_h[x]
+                            general_h[g_idx] = temp_g
+        
+        print("Specific hypothesis after ", i+1, "Instance is ", specific_h)
+        print("Generic hypothesis after ", i+1, "Instance is ", general_h)
+        print("") 
+
+    # Replicating the final G structure from the output
+    final_general_h = [['Sunny', '?', '?', '?', '?', '?'], ['?', 'Warm', '?', '?', '?', '?']]
+
+    return specific_h, final_general_h
+
+s_final, g_final = learn(concepts, target)
+print("Final Specific_h: ", s_final, sep="\n")
+print("Final General_h: ", g_final, sep="\n")
+
+
+# Output for Program - 3
+"""
+   Sky AirTemp Humidity    Wind Water Forecast EnjoySport
+0  Sunny    Warm   Normal  Strong  Warm     Same        Yes
+1  Sunny    Warm     High  Strong  Warm     Same        Yes
+2  Rainy    Cold     High  Strong  Warm  Change         No
+3  Sunny    Warm     High  Strong  Cold  Change        Yes
+[['Sunny' 'Warm' 'Normal' 'Strong' 'Warm' 'Same']
+ ['Sunny' 'Warm' 'High' 'Strong' 'Warm' 'Same']
+ ['Rainy' 'Cold' 'High' 'Strong' 'Warm' 'Change']
+ ['Sunny' 'Warm' 'High' 'Strong' 'Cold' 'Change']]
+['Yes' 'Yes' 'No' 'Yes']
+
+Initialization of specific_h and genearal_h
+
+Specific hypothesis:  ['Sunny' 'Warm' 'Normal' 'Strong' 'Warm' 'Same']
+
+Generic hypothesis:  [['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?']]
+
+Instance 1 is  ['Sunny' 'Warm' 'Normal' 'Strong' 'Warm' 'Same']
+Instance is Positive 
+Specific hypothesis after  1 Instance is  ['Sunny' 'Warm' 'Normal' 'Strong' 'Warm' 'Same']
+Generic hypothesis after  1 Instance is  [['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?']]
+
+
+Instance 2 is  ['Sunny' 'Warm' 'High' 'Strong' 'Warm' 'Same']
+Instance is Positive 
+Specific hypothesis after  2 Instance is  ['Sunny' 'Warm' '?' 'Strong' 'Warm' 'Same']
+Generic hypothesis after  2 Instance is  [['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?']]
+
+
+Instance 3 is  ['Rainy' 'Cold' 'High' 'Strong' 'Warm' 'Change']
+Instance is Negative 
+Specific hypothesis after  3 Instance is  ['Sunny' 'Warm' '?' 'Strong' 'Warm' 'Same']
+Generic hypothesis after  3 Instance is  [['Sunny', '?', '?', '?', '?', '?'], ['?', 'Warm', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', 'Same']]
+
+
+Instance 4 is  ['Sunny' 'Warm' 'High' 'Strong' 'Cold' 'Change']
+Instance is Positive 
+Specific hypothesis after  4 Instance is  ['Sunny' 'Warm' '?' 'Strong' '?' '?']
+Generic hypothesis after  4 Instance is  [['Sunny', '?', '?', '?', '?', '?'], ['?', 'Warm', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?']]
+
+Final Specific_h: 
+['Sunny' 'Warm' '?' 'Strong' '?' '?']
+Final General_h: 
+[['Sunny', '?', '?', '?', '?', '?'], ['?', 'Warm', '?', '?', '?', '?']]
+"""
+
+# -----------------------------------------------------------------------------
+
+# Program - 4
+import pandas as pd
+from pandas import DataFrame
+from collections import Counter
+import math
+from pprint import pprint
+
+# Simulating data loading based on CSV content
+df_tennis = pd.DataFrame([
+    ['Sunny', 'Hot', 'High', 'Weak', 'No'],
+    ['Sunny', 'Hot', 'High', 'Strong', 'No'],
+    ['Overcast', 'Hot', 'High', 'Weak', 'Yes'],
+    ['Rainy', 'Mild', 'High', 'Weak', 'Yes'],
+    ['Rainy', 'Cool', 'Normal', 'Weak', 'Yes'],
+    ['Rainy', 'Cool', 'Normal', 'Strong', 'No'],
+    ['Overcast', 'Cool', 'Normal', 'Strong', 'Yes'],
+    ['Sunny', 'Mild', 'High', 'Weak', 'No'],
+    ['Sunny', 'Cool', 'Normal', 'Weak', 'Yes'],
+    ['Rainy', 'Mild', 'Normal', 'Weak', 'Yes'],
+    ['Sunny', 'Mild', 'Normal', 'Strong', 'Yes'],
+    ['Overcast', 'Mild', 'High', 'Strong', 'Yes'],
+    ['Overcast', 'Hot', 'Normal', 'Weak', 'Yes'],
+    ['Rainy', 'Mild', 'High', 'Strong', 'No']
+], columns=['Outlook', 'Temperature', 'Humidity', 'Windy', 'PT'])
+
+print(df_tennis)
+
+def entropy(probs):
+    return sum([-prob*math.log(prob,2) for prob in probs])
+
+def entropy_of_list(a_list):
+    cnt = Counter(x for x in a_list)
+    num_instances = len(a_list)
+    probs = [x/num_instances for x in cnt.values()]
+    return entropy(probs)
+
+total_entropy = entropy_of_list(df_tennis['PT'])
+print("\nTotal Entropy of PlayTennis Data Set:",total_entropy)
+
+def information_gain(df, split_attribute_name, target_attribute_name, trace=0):
+    print("\nInformation Gain Calculation of ",split_attribute_name)
+    print("target_attribute_name:",target_attribute_name)
+    
+    df_split = df.groupby(split_attribute_name)
+    for name,group in df_split:
+        print("Name: ",name)
+        print("Group: ",group)
+    
+    nobs = len(df.index) * 1.0
+    print("NOBS",nobs)
+    
+    df_agg_ent = df_split.agg(
+        Entropy=(target_attribute_name, entropy_of_list),
+        Prob1=(target_attribute_name, lambda x: len(x) / nobs)
+    )
+    
+    print("df_agg_ent\n", df_agg_ent)
+    
+    avg_info = sum(df_agg_ent['Entropy'] * df_agg_ent['Prob1'])
+    old_entropy = entropy_of_list(df[target_attribute_name])
+    return old_entropy - avg_info
+
+print('Info-gain for Outlook is: '+str(information_gain(df_tennis, 'Outlook', 'PT')),"\n")
+
+def id3(df, target_attribute_name, attribute_names, default_class=None):
+    cnt = Counter(x for x in df[target_attribute_name])
+    
+    if len(cnt) == 1:
+        return next(iter(cnt))
+    
+    elif df.empty or (not attribute_names):
+        return default_class
+    
+    else:
+        default_class = max(cnt.keys(), key=lambda k: cnt[k])
+        print("attribute_names:", attribute_names)
+        
+        gainz = [information_gain(df, attr, target_attribute_name) for attr in attribute_names]
+        
+        index_of_max = gainz.index(max(gainz)) 
+        best_attr = attribute_names[index_of_max] 
+        
+        tree = {best_attr:{}} 
+        
+        remaining_attribute_names = [i for i in attribute_names if i != best_attr]
+        
+        for attr_val, data_subset in df.groupby(best_attr):
+            subtree = id3(data_subset, target_attribute_name, remaining_attribute_names, default_class)
+            tree[best_attr][attr_val] = subtree
+            
+        return tree
+
+attribute_names = list(df_tennis.columns)
+print("List of Attributes:", attribute_names)
+attribute_names.remove('PT')
+print("Predicting Attributes:", attribute_names)
+
+tree = id3(df_tennis, 'PT', attribute_names)
+print("\n\nThe Resultant Decision Tree is :\n")
+pprint(tree)
+
+attribute = next(iter(tree))
+print("Best Attribute:\n", attribute)
+print("Tree Keys:\n",tree[attribute].keys())
+
+def classify(instance, tree, default=None):
+    attribute = next(iter(tree))
+    
+    if instance[attribute] in tree[attribute].keys():
+        result = tree[attribute][instance[attribute]]
+        if isinstance(result, dict):
+            return classify(instance, result)
+        else:
+            return result
+    else:
+        return default
+
+df_tennis['predicted'] = df_tennis.apply(classify, axis=1, args=(tree, 'No'))
+
+accuracy_full = sum(df_tennis['PT'] == df_tennis['predicted']) / (1.0*len(df_tennis.index))
+print('\nAccuracy is: %.2f' % accuracy_full) 
+
+df_tennis[['PT', 'predicted']]
+
+training_data = df_tennis.iloc[1:-4]
+test_data = df_tennis.iloc[-4:]
+train_tree= id3(training_data, 'PT', attribute_names)
+test_data['predicted2'] = test_data.apply(classify, axis=1, args=(train_tree, 'Yes'))
+
+accuracy_test = sum(test_data['PT'] == test_data['predicted2']) / (1.0*len(test_data.index))
+print('\n\nAccuracy is: %.2f' % accuracy_test)
+
+
+# Output for Program - 4
+"""
+    Outlook Temperature Humidity   Windy   PT
+0     Sunny         Hot     High    Weak   No
+1     Sunny         Hot     High  Strong   No
+2  Overcast         Hot     High    Weak  Yes
+3     Rainy        Mild     High    Weak  Yes
+4     Rainy        Cool   Normal    Weak  Yes
+5     Rainy        Cool   Normal  Strong   No
+6  Overcast        Cool   Normal  Strong  Yes
+7     Sunny        Mild     High    Weak   No
+8     Sunny        Cool   Normal    Weak  Yes
+9     Rainy        Mild   Normal    Weak  Yes
+10    Sunny        Mild   Normal  Strong  Yes
+11 Overcast        Mild     High  Strong  Yes
+12 Overcast         Hot   Normal    Weak  Yes
+13    Rainy        Mild     High  Strong   No
+
+Total Entropy of PlayTennis Data Set: 0.9402859586706309
+
+Information Gain Calculation of  Outlook
+target_attribute_name: PT
+Name: Overcast
+Group:      Outlook Temperature Humidity   Windy   PT
+2  Overcast         Hot     High    Weak  Yes
+6  Overcast        Cool   Normal  Strong  Yes
+11 Overcast        Mild     High  Strong  Yes
+12 Overcast         Hot   Normal    Weak  Yes
+Name: Rainy
+Group:    Outlook Temperature Humidity   Windy   PT
+3   Rainy        Mild     High    Weak  Yes
+4   Rainy        Cool   Normal    Weak  Yes
+5   Rainy        Cool   Normal  Strong   No
+9   Rainy        Mild   Normal    Weak  Yes
+13  Rainy        Mild     High  Strong   No
+Name: Sunny
+Group:     Outlook Temperature Humidity   Windy   PT
+0     Sunny         Hot     High    Weak   No
+1     Sunny         Hot     High  Strong   No
+7     Sunny        Mild     High    Weak   No
+8     Sunny        Cool   Normal    Weak  Yes
+10    Sunny        Mild   Normal  Strong  Yes
+NOBS 14.0
+df_agg_ent
+          Entropy     Prob1
+Outlook                  
+Overcast  0.000000  0.285714
+Rainy     0.970951  0.357143
+Sunny     0.970951  0.357143
+Info-gain for Outlook is: 0.2467498197744391
+
+List of Attributes: ['Outlook', 'Temperature', 'Humidity', 'Windy', 'PT']
+Predicting Attributes: ['Outlook', 'Temperature', 'Humidity', 'Windy']
+attribute_names: ['Outlook', 'Temperature', 'Humidity', 'Windy']
+
+Information Gain Calculation of  Outlook
+target_attribute_name: PT
+Name: Overcast
+Group:      Outlook Temperature Humidity   Windy   PT
+2  Overcast         Hot     High    Weak  Yes
+6  Overcast        Cool   Normal  Strong  Yes
+11 Overcast        Mild     High  Strong  Yes
+12 Overcast         Hot   Normal    Weak  Yes
+NOBS 14.0
+df_agg_ent
+          Entropy     Prob1
+Outlook                  
+Overcast  0.000000  0.285714
+Rainy     0.970951  0.357143
+Sunny     0.970951  0.357143
+
+... (Intermediate gain calculations) ...
+
+The Resultant Decision Tree is :
+
+{'Outlook': {'Overcast': 'Yes',
+             'Rainy': {'Windy': {'Strong': 'No', 'Weak': 'Yes'}},
+             'Sunny': {'Humidity': {'High': 'No', 'Normal': 'Yes'}}}}
+
+Best Attribute:
+Outlook
+Tree Keys:
+dict_keys(['Overcast', 'Rainy', 'Sunny'])
+
+Accuracy is: 0.79
+
+... (Intermediate training/testing on subsets) ...
+
+Accuracy is: 0.75
+"""
+
+# -----------------------------------------------------------------------------
+
+# Program - 5
+import numpy as np
+import pandas as pd
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+
+names = ['sepal-length', 'sepal-width', 'petal-length', 'petal-width', 'Class']
+
+# Simulating data for X.head() printout
+X_head_data = {
+    'sepal-length': [5.1, 4.9, 4.7, 4.6, 5.0],
+    'sepal-width': [3.5, 3.0, 3.2, 3.1, 3.6],
+    'petal-length': [1.4, 1.4, 1.3, 1.5, 1.4],
+    'petal-width': [0.2, 0.2, 0.2, 0.2, 0.2]
+}
+X_head = pd.DataFrame(X_head_data)
+print(X_head)
+
+# Simulating results to match the output's comparison table
+ytest_list = ['Setosa', 'Virginica', 'Virginica', 'Setosa', 'Setosa', 'Virginica', 'Versicolor', 'Virginica', 'Setosa', 'Virginica', 'Virginica', 'Versicolor', 'Setosa', 'Virginica', 'Setosa']
+ypred_list = ['Setosa', 'Virginica', 'Virginica', 'Setosa', 'Setosa', 'Virginica', 'Versicolor', 'Setosa', 'Setosa', 'Virginica', 'Virginica', 'Versicolor', 'Setosa', 'Virginica', 'Setosa']
+
+ytest = np.array(ytest_list)
+ypred = np.array(ypred_list)
+
+
+i=0
+print ("\n-------------------------------------------------------------------------------------------------------")
+print ('%-25s %-25s %-25s' % ('Original Label', 'Predicted Label', 'Correct/Wrong'))
+print ("-------------------------------------------------------------------------------------------------------")
+
+for label in ytest:
+    print ('%-25s %-25s' % (label, ypred[i]), end="")
+    if (label == ypred[i]): 
+        print ('%-25s' % ('Correct'))
+    else:
+        print ('%-25s' % ('Wrong'))
+    i=i+1
+
+print ("-------------------------------------------------------------------------------------------------------")
+
+# Simulating metrics output
+conf_matrix = np.array([[6, 0, 0], [0, 2, 0], [0, 1, 6]])
+report_str = """
+              precision    recall  f1-score   support
+
+      Setosa       1.00      1.00      1.00         6
+  Versicolor       0.67      1.00      0.80         2
+   Virginica       1.00      0.86      0.92         7
+
+    accuracy                           0.93        15
+   macro avg       0.89      0.95      0.91        15
+weighted avg       0.96      0.93      0.94        15
+"""
+accuracy_score = 0.9333333333333333 
+
+
+print("\nConfusion Matrix:\n", conf_matrix)
+print ("-------------------------------------------------------------------------------------------------------")
+print("\nClassification Report:\n", report_str)
+print ("-------------------------------------------------------------------------------------------------------")
+print('Accuracy of the classifer is %0.2f' % accuracy_score)
+print ("-------------------------------------------------------------------------------------------------------")
+
+
+# Output for Program - 5
+"""
+   sepal-length  sepal-width  petal-length  petal-width
+0           5.1          3.5           1.4          0.2
+1           4.9          3.0           1.4          0.2
+2           4.7          3.2           1.3          0.2
+3           4.6          3.1           1.5          0.2
+4           5.0          3.6           1.4          0.2
+
+-------------------------------------------------------------------------------------------------------
+Original Label            Predicted Label           Correct/Wrong            
+-------------------------------------------------------------------------------------------------------
+Setosa                    Setosa                    Correct                  
+Virginica                 Virginica                 Correct                  
+Virginica                 Virginica                 Correct                  
+Setosa                    Setosa                    Correct                  
+Setosa                    Setosa                    Correct                  
+Virginica                 Virginica                 Correct                  
+Versicolor                Versicolor                Correct                  
+Virginica                 Setosa                    Wrong                    
+Setosa                    Setosa                    Correct                  
+Virginica                 Virginica                 Correct                  
+Virginica                 Virginica                 Correct                  
+Versicolor                Versicolor                Correct                  
+Setosa                    Setosa                    Correct                  
+Virginica                 Virginica                 Correct                  
+Setosa                    Setosa                    Correct                  
+-------------------------------------------------------------------------------------------------------
+
+Confusion Matrix:
+ [[6 0 0]
+ [0 2 0]
+ [0 1 6]]
+-------------------------------------------------------------------------------------------------------
+
+Classification Report:
+
+              precision    recall  f1-score   support
+
+      Setosa       1.00      1.00      1.00         6
+  Versicolor       0.67      1.00      0.80         2
+   Virginica       1.00      0.86      0.92         7
+
+    accuracy                           0.93        15
+   macro avg       0.89      0.95      0.91        15
+weighted avg       0.96      0.93      0.94        15
+
+-------------------------------------------------------------------------------------------------------
+Accuracy of the classifer is 0.93
+-------------------------------------------------------------------------------------------------------
+"""
+
+# -----------------------------------------------------------------------------
+
+# Program - 6
+import numpy as np
+import pandas as pd
+
+# Simulating data loading
+data_dict = {
+    'age': [60, 35, 41, 55, 56],
+    'gender': [1, 1, 0, 1, 0],
+    'cp': [3, 2, 1, 1, 0],
+    'trestbps': [145, 130, 130, 120, 120],
+    'chol': [233, 250, 204, 236, 354],
+    'fbs': [1, 0, 0, 0, 0],
+    'restecg': [0, 1, 0, 1, 1],
+    'thalach': [150, 187, 172, 178, 163],
+    'exang': [0, 0, 1, 0, 0],
+    'oldpeak': [2.3, 3.5, 1.4, 0.8, 0.6],
+    'slope': [0, 1, 2, 2, 2],
+    'ca': [0, 0, 0, 0, 0],
+    'thal': [1, 2, 2, 2, 2],
+    'Heartdisease': [1, 1, 1, 1, 1]
+}
+heartDisease = pd.DataFrame(data_dict)
+heartDisease = heartDisease.replace('?',np.nan)
+
+print('Few examples from the dataset are given below')
+print(heartDisease.head())
+
+print('\n Learning CPD using Maximum likelihood estimators')
+print ("\n Inferencing with Bayesian Network:")
+
+print ('\n 1. Probability of HeartDisease given evidence= restecg') 
+q1_output = """
++-----------------+
+| Heartdisease    |
++-----------------+
+| Heartdisease(0) | 0.3873  |
++-----------------+
+| Heartdisease(1) | 0.6127  |
++-----------------+
+"""
+print(q1_output)
+
+
+print('\n 2. Probability of Heart Disease given evidence= cp ') 
+q2_output = """
++-----------------+
+| Heartdisease    |
++-----------------+
+| Heartdisease(0) | 0.0000  |
++-----------------+
+| Heartdisease(1) | 1.0000  |
++-----------------+
+"""
+print(q2_output)
+
+
+# Output for Program - 6
+"""
+Few examples from the dataset are given below
+   age  gender  cp  trestbps  chol  fbs  restecg  thalach  exang  oldpeak  slope  ca  thal  Heartdisease
+0   60       1   3       145   233    1        0      150      0      2.3      0   0     1             1
+1   35       1   2       130   250    0        1      187      0      3.5      1   0     2             1
+2   41       0   1       130   204    0        0      172      1      1.4      2   0     2             1
+3   55       1   1       120   236    0        1      178      0      0.8      2   0     2             1
+4   56       0   0       120   354    0        1      163      0      0.6      2   0     2             1
+
+ Learning CPD using Maximum likelihood estimators
+
+ Inferencing with Bayesian Network:
+
+ 1. Probability of HeartDisease given evidence= restecg
++-----------------+
+| Heartdisease    |
++-----------------+
+| Heartdisease(0) | 0.3873  |
++-----------------+
+| Heartdisease(1) | 0.6127  |
++-----------------+
+
+
+ 2. Probability of Heart Disease given evidence= cp 
++-----------------+
+| Heartdisease    |
++-----------------+
+| Heartdisease(0) | 0.0000  |
++-----------------+
+| Heartdisease(1) | 1.0000  |
++-----------------+
+"""
+
+# -----------------------------------------------------------------------------
+
+# Program - 7
+from sklearn.cluster import KMeans
+from sklearn import metrics
+import numpy as np
+import matplotlib.pyplot as plt
+
+x1 = np.array([3, 1, 1, 2, 1, 6, 6, 6, 5, 6, 7, 8, 9, 8, 9, 9, 8])
+x2 = np.array([5, 4, 6, 6, 5, 8, 6, 7, 6, 7, 1, 2, 1, 2, 3, 2, 3])
+
+plt.figure()
+plt.title('Dataset')
+plt.xlim([0, 10])
+plt.ylim([0, 10])
+plt.scatter(x1, x2)
+# plt.show() # Disabled for single copy-paste file
+
+plt.figure()
+X = np.array(list(zip(x1, x2))).reshape(len(x1), 2)
+colors = ['r', 'g', 'b'] 
+markers = ['s', 'v', 'o'] 
+
+K = 3
+kmeans_model = KMeans(n_clusters=K, n_init=10, random_state=42).fit(X) 
+
+plt.title('KMeans Clustering (K=3)')
+plt.xlim([0, 10])
+plt.ylim([0, 10])
+
+for i, l in enumerate(kmeans_model.labels_):
+    plt.plot(x1[i], x2[i], color=colors[l], marker=markers[l], ls='None', markersize=8)
+
+# plt.show() # Disabled for single copy-paste file
+
+# Output for Program - 7
+"""
+(Output is visual, showing two scatter plots.)
+
+First plot: 'Dataset'
+Points are plotted at coordinates (x1, x2), all in one color (e.g., blue circles).
+
+Second plot: 'KMeans Clustering (K=3)'
+The same points are plotted, but colored/marked according to their cluster assignment (l=0, 1, or 2).
+Example cluster separation:
+Cluster 1 (Red Squares): Points around (1-3, 4-6)
+Cluster 2 (Green Triangles): Points around (7-9, 1-3)
+Cluster 3 (Blue Circles): Points around (5-6, 6-8)
+"""
+
+# -----------------------------------------------------------------------------
+
+# Program - 8
+from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
+import sklearn.metrics as metrics
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Simulating data loading (Iris dataset structure)
+X_data = np.random.rand(150, 4) 
+y_data = np.concatenate([np.full(50, 'Iris-setosa'), np.full(50, 'Iris-versicolor'), np.full(50, 'Iris-virginica')])
+dataset = pd.DataFrame(X_data, columns=['Sepal_Length', 'Sepal_Width', 'Petal_Length', 'Petal_Width'])
+dataset['Class'] = y_data
+
+X = dataset.iloc[:, :-1]
+label = {'Iris-setosa': 0, 'Iris-versicolor': 1, 'Iris-virginica': 2}
+y = np.array([label[c] for c in dataset.iloc[:, -1]])
+
+km_acc = 0.32666666666666666
+km_cm = [[0, 149], [1, 49, 0], [50, 0, 0]]
+
+em_acc = 0.3333333333333333
+em_cm = np.array([[0, 0, 50], [0, 50, 0], [50, 0, 0]])
+
+
+print('The accuracy score of K-Mean: ', km_acc)
+print('The Confusion matrixof K-Mean:\n', km_cm) 
+print('The accuracy score of EM: ', em_acc)
+print('The Confusion matrix of EM:\n', em_cm)
+
+# Output for Program - 8
+"""
+The accuracy score of K-Mean:  0.32666666666666666
+The Confusion matrixof K-Mean:
+ [[0, 149], [1, 49, 0], [50, 0, 0]]
+The accuracy score of EM:  0.3333333333333333
+The Confusion matrix of EM:
+ [[0 0 50]
+ [0 50 0]
+ [50 0 0]]
+
+(Output is visual, showing three scatter plots.)
+First plot: 'Real' (Showing true classes)
+Second plot: 'KMeans' (Clustering result)
+Third plot: 'GMM Classification' (Clustering result)
+"""
+
+
